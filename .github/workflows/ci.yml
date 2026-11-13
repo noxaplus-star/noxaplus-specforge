@@ -1,0 +1,35 @@
+name: CI
+on:
+  push:
+    branches: [main]
+  pull_request:
+permissions:
+  contents: read
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npm run typecheck
+      - run: npm test
+      - run: npm run build
+      - name: Smoke test the mock server
+        run: |
+          node dist/cli.js mock examples/petstore.yaml --port 4123 --quiet &
+          SERVER=$!
+          for i in $(seq 1 30); do
+            if curl -sf http://127.0.0.1:4123/health > /dev/null; then break; fi
+            sleep 0.5
+          done
+          curl -sf http://127.0.0.1:4123/pets > /dev/null
+          curl -sf http://127.0.0.1:4123/__specforge > /dev/null
+          curl -sf -X POST http://127.0.0.1:4123/pets -H "Content-Type: application/json" -d '{"name":"Ci","species":"cat","age":1}' > /dev/null
+          curl -s -o /dev/null -w "%{http_code}" "http://127.0.0.1:4123/pets/1?__error=503" | grep -q 503
+          kill $SERVER
+      - name: Print route table
+        run: node dist/cli.js routes examples/petstore.yaml

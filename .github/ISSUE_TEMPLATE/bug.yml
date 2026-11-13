@@ -1,0 +1,39 @@
+name: Bug report
+description: A route, response, or dashboard behavior in SpecForge is wrong.
+labels: [bug]
+body:
+  - type: input
+    id: version
+    attributes:
+      label: SpecForge version
+      placeholder: 1.0.0
+    validations:
+      required: true
+  - type: textarea
+    id: spec
+    attributes:
+      label: Minimal spec or relevant paths
+      description: Paste only the path and schema definitions needed to reproduce the issue. Remove anything private.
+      render: yaml
+    validations:
+      required: true
+  - type: input
+    id: request
+    attributes:
+      label: Request that misbehaves
+      placeholder: POST /pets?__error=500
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: What did you expect?
+    validations:
+      required: true
+  - type: textarea
+    id: actual
+    attributes:
+      label: What happened?
+      description: Include the status code, response body, and any terminal error. Never paste credentials.
+    validations:
+      required: true

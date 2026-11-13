@@ -1,0 +1,56 @@
+{
+  "name": "noxaplus-specforge",
+  "version": "1.0.0",
+  "description": "Turn any OpenAPI file into a working mock API in one command, with seeded data, CRUD state, latency, and error injection. Built by NoxaPlus.",
+  "keywords": [
+    "openapi",
+    "mock-server",
+    "api",
+    "swagger",
+    "testing",
+    "cli",
+    "developer-tools",
+    "noxaplus"
+  ],
+  "author": "NoxaPlus <NoxaPlus2025@gmail.com>",
+  "license": "MIT",
+  "homepage": "https://github.com/noxaplus-star/noxaplus-specforge",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/noxaplus-star/noxaplus-specforge.git"
+  },
+  "bugs": {
+    "url": "https://github.com/noxaplus-star/noxaplus-specforge/issues"
+  },
+  "type": "module",
+  "engines": {
+    "node": ">=22"
+  },
+  "bin": {
+    "specforge": "./dist/cli.js"
+  },
+  "files": [
+    "dist",
+    "examples",
+    "docs/dashboard.png",
+    "README.md",
+    "LICENSE",
+    "CHANGELOG.md"
+  ],
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "mock": "node dist/cli.js mock examples/petstore.yaml",
+    "prepare": "npm run build"
+  },
+  "dependencies": {
+    "yaml": "^2.8.1"
+  },
+  "devDependencies": {
+    "@types/node": "^24.10.0",
+    "typescript": "^5.9.3",
+    "vitest": "^3.2.4"
+  }
+}
