@@ -215,6 +215,91 @@ describe('mock server', () => {
   });
 });
 
+describe('request field validation', () => {
+  it.each(['POST', 'PUT', 'PATCH'])('ignores read-only fields in %s bodies', async method => {
+    const spec = structuredClone(document);
+    spec.components!.schemas!.Pet!.properties!.createdAt!.readOnly = true;
+    const mock = createMockServer(spec, { quiet: true });
+    const { url } = await mock.listen(0, '127.0.0.1');
+    try {
+      const original = await fetch(`${url}/pets/1`).then(response => response.json()) as Record<string, unknown>;
+      const path = method === 'POST' ? '/pets' : '/pets/1';
+      const response = await fetch(`${url}${path}`, {
+        method,
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id: 1, name: 'Updated pet', species: 'cat', createdAt: 'client-controlled' }),
+      });
+      expect(response.status).toBe(method === 'POST' ? 201 : 200);
+      const pet = await response.json() as Record<string, unknown>;
+      expect(pet.id).toBe(method === 'POST' ? 4 : 1);
+      expect(pet.name).toBe('Updated pet');
+      expect(pet.createdAt).toBeTruthy();
+      expect(pet.createdAt).not.toBe('client-controlled');
+      if (method !== 'POST') expect(pet.createdAt).toBe(original.createdAt);
+      const saved = await fetch(`${url}/pets/${String(pet.id)}`).then(result => result.json());
+      expect(saved).toEqual(pet);
+      if (method === 'POST') {
+        expect(await fetch(`${url}/pets/1`).then(result => result.json())).toEqual(original);
+        expect(response.headers.get('location')).toBe('/pets/4');
+      }
+    } finally {
+      await mock.close();
+    }
+  });
+
+  it.each(['POST', 'PUT'])('rejects missing required fields in %s without changing stored data', async method => {
+    const { mock, url } = await startServer();
+    try {
+      const original = await fetch(`${url}/pets`).then(response => response.json());
+      const response = await fetch(`${url}${method === 'POST' ? '/pets' : '/pets/1'}`, {
+        method,
+        headers: { 'Content-Type': 'application/json' },
+        body: '{}',
+      });
+      expect(response.status).toBe(422);
+      expect(await response.json()).toMatchObject({ error: { details: ['name', 'species'] } });
+      expect(await fetch(`${url}/pets`).then(result => result.json())).toEqual(original);
+    } finally {
+      await mock.close();
+    }
+  });
+
+  it('treats prototype-shaped JSON keys as data during a patch', async () => {
+    const { mock, url } = await startServer();
+    try {
+      const response = await fetch(`${url}/pets/1`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: '{"__proto__":{"polluted":true},"age":4}',
+      });
+      expect(response.status).toBe(200);
+      const item = mock.store.find('/pets', '1');
+      expect(Object.getPrototypeOf(item)).toBe(Object.prototype);
+      expect(item?.polluted).toBeUndefined();
+      expect(item?.age).toBe(4);
+    } finally {
+      await mock.close();
+    }
+  });
+
+  it('keeps an item addressable after a patch tries to change its ID', async () => {
+    const { mock, url } = await startServer();
+    try {
+      const response = await fetch(`${url}/pets/2`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id: 9000, age: 3 }),
+      });
+      expect(response.status).toBe(200);
+      expect(await response.json()).toMatchObject({ id: 2, age: 3 });
+      expect(await fetch(`${url}/pets/2`).then(result => result.json())).toMatchObject({ id: 2, age: 3 });
+      expect((await fetch(`${url}/pets/9000`)).status).toBe(404);
+    } finally {
+      await mock.close();
+    }
+  });
+});
+
 describe('base path', () => {
   it('prefixes every mock route', async () => {
     const { mock, url } = await startServer({ base: '/api/v2' });

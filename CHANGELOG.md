@@ -2,6 +2,15 @@
 
 All notable changes to NoxaPlus SpecForge are recorded here. The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and the project uses [Semantic Versioning](https://semver.org/).
 
+## [1.0.1] — 2026-11-14
+
+### Fixed
+
+- Ignore incoming read-only fields on create, replace, and patch, retaining server-owned values and stable record IDs.
+- Reject replacement bodies missing required request fields without changing stored records.
+- Apply patches without allowing JSON keys to modify a record's prototype.
+- Add seven regression cases for request validation, record identity, and prototype safety.
+
 ## [1.0.0] — 2026-11-13
 
 First public release.

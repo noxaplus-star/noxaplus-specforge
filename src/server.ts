@@ -253,27 +253,38 @@ export function createMockServer(document: OpenApiDocument, options: MockServerO
       return { status: 200, body: item };
     }
 
-    if (route.kind === 'create' && collection) {
+    if ((route.kind === 'create' || route.kind === 'update' || route.kind === 'patch') && collection) {
       const object = asObject(body);
       if (!object) return { status: 400, body: { error: { status: 400, message: 'A JSON object body is required.', source: 'specforge' } } };
       const itemSchema = store.getState(collection)?.itemSchema;
-      const missing = (itemSchema?.required ?? []).filter(name => itemSchema?.properties?.[name]?.readOnly !== true && object[name] === undefined);
+      const inputSchema = resolveSchema(document, requestSchema(route.operation)) ?? itemSchema;
+      const readOnly = new Set(
+        [...Object.entries(itemSchema?.properties ?? {}), ...Object.entries(inputSchema?.properties ?? {})]
+          .filter(([, property]) => property.readOnly === true)
+          .map(([name]) => name),
+      );
+      const writable = Object.fromEntries(Object.entries(object).filter(([name]) => !readOnly.has(name)));
+      const missing = route.kind === 'patch' ? [] : (inputSchema?.required ?? [])
+        .filter(name => !readOnly.has(name) && !Object.hasOwn(writable, name));
       if (missing.length > 0) {
         return { status: 422, body: { error: { status: 422, message: 'Required fields are missing.', details: missing, source: 'specforge' } } };
       }
-      const template = asObject(generateSample(document, itemSchema, runtime.seed, `${route.path}.created.${requestIndex}`)) ?? {};
-      const idKey = store.getState(collection)?.idKey;
-      if (idKey) delete template[idKey];
-      const item = store.create(collection, { ...template, ...object });
-      return { status: 201, body: item, headers: idKey ? { Location: `${route.path}/${String(item[idKey])}` } : {} };
-    }
 
-    if ((route.kind === 'update' || route.kind === 'patch') && collection) {
+      if (route.kind === 'create') {
+        const template = asObject(generateSample(document, itemSchema, runtime.seed, `${route.path}.created.${requestIndex}`)) ?? {};
+        const idKey = store.getState(collection)?.idKey;
+        if (idKey) delete template[idKey];
+        const item = store.create(collection, { ...template, ...writable });
+        return { status: 201, body: item, headers: idKey ? { Location: `${route.path}/${String(item[idKey])}` } : {} };
+      }
+
       const id = params[route.parameterNames.at(-1) ?? ''] ?? '';
-      const object = asObject(body);
-      if (!object) return { status: 400, body: { error: { status: 400, message: 'A JSON object body is required.', source: 'specforge' } } };
-      const updated = route.kind === 'update' ? store.replace(collection, id, object) : store.patch(collection, id, object);
-      if (!updated) return { status: 404, body: { error: { status: 404, message: `No item "${id}" in ${collection}.`, source: 'specforge' } } };
+      const previous = store.find(collection, id);
+      if (!previous) return { status: 404, body: { error: { status: 404, message: `No item "${id}" in ${collection}.`, source: 'specforge' } } };
+      const preserved = Object.fromEntries(Object.entries(previous).filter(([name]) => readOnly.has(name)));
+      const updated = route.kind === 'update'
+        ? store.replace(collection, id, { ...writable, ...preserved })
+        : store.patch(collection, id, writable);
       return { status: 200, body: updated };
     }
 

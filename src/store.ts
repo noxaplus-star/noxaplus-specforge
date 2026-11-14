@@ -116,8 +116,10 @@ export class MockStore {
     const state = this.ensureCollection(path);
     const item = this.find(path, id);
     if (!item) return undefined;
-    Object.assign(item, body);
-    return item;
+    const updated = { ...item, ...body };
+    if (state.idKey) updated[state.idKey] = item[state.idKey];
+    state.items[state.items.indexOf(item)] = updated;
+    return updated;
   }
 
   remove(path: string, id: string): boolean {

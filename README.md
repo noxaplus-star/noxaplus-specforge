@@ -56,7 +56,7 @@ curl "http://127.0.0.1:4010/pets/3?__error=503"
 Install the release package globally if you want the `specforge` command anywhere:
 
 ```bash
-npm install -g https://github.com/noxaplus-star/noxaplus-specforge/releases/download/v1.0.0/noxaplus-specforge-1.0.0.tgz
+npm install -g https://github.com/noxaplus-star/noxaplus-specforge/releases/download/v1.0.1/noxaplus-specforge-1.0.1.tgz
 specforge mock openapi.yaml
 ```
 
