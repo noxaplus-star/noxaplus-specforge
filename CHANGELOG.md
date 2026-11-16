@@ -2,6 +2,12 @@
 
 All notable changes to NoxaPlus SpecForge are recorded here. The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and the project uses [Semantic Versioning](https://semver.org/).
 
+## [1.0.2] — 2026-11-16
+
+### Changed
+
+- The dashboard header and favicon now use the original NoxaPlus emblem and brand tile.
+
 ## [1.0.1] — 2026-11-14
 
 ### Fixed

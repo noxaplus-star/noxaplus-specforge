@@ -1,3 +1,5 @@
+<p align="center"><img src="docs/brand.png" alt="NoxaPlus" width="520"></p>
+
 # NoxaPlus SpecForge
 
 **Your OpenAPI file already describes a working API. SpecForge makes it actually run.**
@@ -56,7 +58,7 @@ curl "http://127.0.0.1:4010/pets/3?__error=503"
 Install the release package globally if you want the `specforge` command anywhere:
 
 ```bash
-npm install -g https://github.com/noxaplus-star/noxaplus-specforge/releases/download/v1.0.1/noxaplus-specforge-1.0.1.tgz
+npm install -g https://github.com/noxaplus-star/noxaplus-specforge/releases/download/v1.0.2/noxaplus-specforge-1.0.2.tgz
 specforge mock openapi.yaml
 ```
 
